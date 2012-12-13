@@ -13,8 +13,7 @@ require File.expand_path("#{File.dirname(__FILE__)}/at-validations/version.rb")
 
 class Hash
   def matches_mask(mask, opts = {})
-    include ATValidations::Predicates
-    atv_hash(mask, opts).call(self)
+    ATValidations::Predicates.atv_hash(mask, opts).call(self)
   end
 end
 
@@ -44,9 +43,21 @@ module ATValidations
       )
     end
 
+    def atv_array_of(predicate)
+      atv_union(
+        atv_instance_of(Array),
+        atv_block do |e|
+          errs = {}
+          e.each_index {|i| errs[i] = err unless true == (err = predicate.call(e)) }
+          errs.count == 0 || Error.new(:error => 'array contains elements which do not match predicate', :failures => errs)
+        end
+      )
+    end
+
     def atv_union(*predicates)
       atv_block do |e|
-        (err = predicates.find(true) {|p| p.call(e) }) ||
+        err = nil
+        nil == predicates.find {|p| true != (err = p.call(e)) } ||
           Error.new(:error => 'must match all predicate in union', :failure => err)
       end
     end
@@ -54,8 +65,8 @@ module ATValidations
     def atv_option(*predicates)
       atv_block do |e|
         errs = []
-        predicates.find(false) {|p| true == (errs << p.call(e)).last } ||
-          Error.new(:error => 'must match all predicate in union', :failure => errs)
+        nil != predicates.find {|p| true == (errs << p.call(e)).last } ||
+          Error.new(:error => 'must match at least one predicate in option', :failure => errs)
       end
     end
 
@@ -77,18 +88,25 @@ module ATValidations
       end
     end
 
-    def atv_number
-      atv_instance_of(Number)
+    def atv_numeric
+      atv_instance_of(Numeric)
     end
 
     def atv_string
       atv_instance_of(String)
+    end
+
+    def atv_symbol
+      atv_instance_of(Symbol)
     end
   end
 
   class Error < StandardError
     def initialize(info = {})
       @info = info
+    end
+    def to_s
+      @info.to_s
     end
   end
 end
