@@ -1,7 +1,89 @@
-require "at-validations/version"
+require File.expand_path("#{File.dirname(__FILE__)}/at-validations/version.rb")
 
-module At
-  module Validations
-    # Your code goes here...
+
+# We're adding (monkey-patching) a method to Object and to Hash.
+#
+# Hash gets this convenience method:
+#
+#   {hello: :world}.matches_mask({
+#     _id: atv_string,
+#     status: atv_number + atv_block {|e| e >= 200 && e < 300 } 
+#   })
+#
+
+class Hash
+  def matches_mask(mask, opts = {})
+    include ATValidations::Predicates
+    atv_hash(mask, opts).call(self)
+  end
+end
+
+
+module ATValidations
+
+  module Predicates
+    def atv_block(&b)
+      b
+    end
+
+    def atv_hash(mask, opts = {})
+      atv_union(
+        atv_instance_of(Hash),
+        atv_block do |e|
+          errors = {}
+          mask.each do |k, v|
+            r = v.call(e[k])
+            errors[k] = r unless true == r
+          end
+          if false == opts[:allow_extra] && (extra = (e.keys - mask.keys)).count > 0
+            extra.each {|k| errors[k] = 'is not present in predicate' }
+          end
+
+          errors.empty? || Error.new(:error => 'must match hash predicate', :failures => errors)
+        end
+      )
+    end
+
+    def atv_union(*predicates)
+      atv_block do |e|
+        (err = predicates.find(true) {|p| p.call(e) }) ||
+          Error.new(:error => 'must match all predicate in union', :failure => err)
+      end
+    end
+
+    def atv_option(*predicates)
+    end
+
+    def atv_in_set(*set)
+      atv_block do |e|
+        set.include?(e) || Error.new(:error => "must be in set #{set}")
+      end
+    end
+
+    def atv_equal(value)
+      atv_block do |e|
+        e == value || Error.new(:error => "must be equal to #{value}")
+      end
+    end
+
+    def atv_instance_of(klass)
+      atv_block do |e|
+        e.is_a?(klass) || Error.new(:error => "must be a #{klass}")
+      end
+    end
+
+    def atv_number
+      atv_instance_of(Number)
+    end
+
+    def atv_string
+      atv_instance_of(String)
+    end
+  end
+
+  class Error < StandardError
+    def initialize(info = {})
+      @info = info
+    end
   end
 end
