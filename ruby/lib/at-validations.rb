@@ -52,6 +52,11 @@ module ATValidations
     end
 
     def atv_option(*predicates)
+      atv_block do |e|
+        errs = []
+        predicates.find(false) {|p| true == (errs << p.call(e)).last } ||
+          Error.new(:error => 'must match all predicate in union', :failure => errs)
+      end
     end
 
     def atv_in_set(*set)
