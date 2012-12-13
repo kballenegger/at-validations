@@ -7,7 +7,9 @@ require File.expand_path("#{File.dirname(__FILE__)}/at-validations/version.rb")
 #
 #   {hello: :world}.matches_mask({
 #     _id: atv_string,
-#     status: atv_number + atv_block {|e| e >= 200 && e < 300 } 
+#     status: atv_union(
+#               atv_number,
+#               atv_block {|e| e >= 200 && e < 300 })
 #   })
 #
 
