@@ -107,6 +107,11 @@ ATVPredicate *ATVNull() {
     return instance;
 }
 
+ATVPredicate *ATVNullOr(ATVPredicate *predicate) {
+    return ATVOption(ATVNull(), predicate);
+}
+
+
 ATVPredicate *ATVInSetA(id<NSFastEnumeration> values) {
 
     return ATVMatchesBlock(^BOOL(id object, NSError **error) {

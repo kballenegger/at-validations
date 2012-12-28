@@ -40,6 +40,7 @@ ATVPredicate *ATVInSetA(id<NSFastEnumeration> values);
 ATVPredicate *ATVEqual(id value);
 ATVPredicate *ATVExists(void);
 ATVPredicate *ATVNull(void);
+ATVPredicate *ATVNullOr(ATVPredicate *predicate);
 
 
 @interface NSObject (ATValidations)
