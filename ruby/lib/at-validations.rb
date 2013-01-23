@@ -19,6 +19,12 @@ class Hash
   end
 end
 
+class Object
+  def matches_predicate(predicate)
+    predicate.call(self)
+  end
+end
+
 
 module ATValidations
 
@@ -100,6 +106,12 @@ module ATValidations
 
     def atv_symbol
       atv_instance_of(Symbol)
+    end
+
+    def atv_nil_or(predicate)
+      atv_block do |e|
+        nil == e || predicate.call(e)
+      end
     end
   end
 
