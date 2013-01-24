@@ -56,7 +56,7 @@ module ATValidations
         atv_instance_of(Array),
         atv_block do |e|
           errs = {}
-          e.each_index {|i| errs[i] = err unless true == (err = predicate.call(e)) }
+          e.each_index {|i| err = predicate.call(e); errs[i] = err unless true == err }
           errs.count == 0 || Error.new(:error => 'array contains elements which do not match predicate', :failures => errs)
         end
       )
